@@ -7,7 +7,7 @@ import { vehiculeSchema } from '@/lib/validations/vehicule';
 // GET - Récupérer un véhicule par ID
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -15,8 +15,10 @@ export async function GET(
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
+    const { id } = await params;
+
     const vehicule = await prisma.vehicule.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         creator: {
           select: {
@@ -75,7 +77,7 @@ export async function GET(
 // PUT - Mettre à jour un véhicule
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -83,6 +85,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
+    const { id } = await params;
     const body = await request.json();
 
     // Validation des données
@@ -90,7 +93,7 @@ export async function PUT(
 
     // Vérifier si le véhicule existe
     const existingVehicule = await prisma.vehicule.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!existingVehicule) {
@@ -122,7 +125,7 @@ export async function PUT(
 
     // Mettre à jour le véhicule
     const vehicule = await prisma.vehicule.update({
-      where: { id: params.id },
+      where: { id },
       data: dataToUpdate,
       include: {
         creator: {
@@ -168,7 +171,7 @@ export async function PUT(
 // DELETE - Supprimer un véhicule
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -176,9 +179,11 @@ export async function DELETE(
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
+    const { id } = await params;
+
     // Vérifier si le véhicule existe
     const vehicule = await prisma.vehicule.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!vehicule) {
@@ -190,7 +195,7 @@ export async function DELETE(
 
     // Supprimer le véhicule (cascade supprimera les interventions, photos, historique)
     await prisma.vehicule.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json(

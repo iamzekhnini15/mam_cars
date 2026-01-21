@@ -1,10 +1,12 @@
 import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Car, Wrench, TrendingUp, Package } from 'lucide-react';
+import { formatPrice } from '@/lib/utils';
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -13,30 +15,81 @@ export default async function DashboardPage() {
     redirect('/login');
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">MAM Cars</h1>
-            <p className="text-sm text-gray-600">Gestion de Stock Automobile</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">
-              {session.user.prenom} {session.user.nom}
-            </span>
-            <Link href="/api/auth/signout">
-              <Button variant="outline" size="sm">
-                Déconnexion
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+  // Récupérer les statistiques
+  const [
+    totalVehicules,
+    vehiculesEnStock,
+    vehiculesVendus,
+    interventionsEnCours,
+    statsFinancieres,
+  ] = await Promise.all([
+    // Nombre total de véhicules
+    prisma.vehicule.count(),
+    
+    // Véhicules en stock (non vendus)
+    prisma.vehicule.count({
+      where: {
+        statut: {
+          in: ['EN_STOCK', 'EN_REPARATION', 'PRET_A_VENDRE', 'RESERVE'],
+        },
+      },
+    }),
+    
+    // Véhicules vendus
+    prisma.vehicule.count({
+      where: {
+        statut: 'VENDU',
+      },
+    }),
+    
+    // Interventions en cours ou à faire
+    prisma.intervention.count({
+      where: {
+        statut: {
+          in: ['A_FAIRE', 'EN_COURS'],
+        },
+      },
+    }),
+    
+    // Statistiques financières
+    prisma.vehicule.aggregate({
+      where: {
+        statut: {
+          in: ['EN_STOCK', 'EN_REPARATION', 'PRET_A_VENDRE', 'RESERVE'],
+        },
+      },
+      _sum: {
+        prixAchat: true,
+        coutReparations: true,
+      },
+    }),
+  ]);
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+  // Calculer la valeur totale du stock (prix d'achat + coûts de réparation)
+  const valeurStock =
+    Number(statsFinancieres._sum.prixAchat || 0) +
+    Number(statsFinancieres._sum.coutReparations || 0);
+
+  // Calculer la marge totale des véhicules vendus
+  const vehiculesVendusData = await prisma.vehicule.findMany({
+    where: {
+      statut: 'VENDU',
+    },
+    select: {
+      prixVenteFinal: true,
+      prixAchat: true,
+      coutReparations: true,
+    },
+  });
+
+  const margeTotale = vehiculesVendusData.reduce((acc, v) => {
+    const prixVente = Number(v.prixVenteFinal || 0);
+    const coutTotal = Number(v.prixAchat) + Number(v.coutReparations || 0);
+    return acc + (prixVente - coutTotal);
+  }, 0);
+
+  return (
+    <>
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900">
             Tableau de bord
@@ -56,9 +109,9 @@ export default async function DashboardPage() {
               <Car className="h-4 w-4 text-gray-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">{vehiculesEnStock}</div>
               <p className="text-xs text-gray-600 mt-1">
-                Aucun véhicule pour le moment
+                {vehiculesVendus} véhicule(s) vendu(s)
               </p>
             </CardContent>
           </Card>
@@ -71,9 +124,11 @@ export default async function DashboardPage() {
               <Wrench className="h-4 w-4 text-gray-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">{interventionsEnCours}</div>
               <p className="text-xs text-gray-600 mt-1">
-                Aucune intervention
+                {interventionsEnCours === 0
+                  ? 'Aucune intervention'
+                  : `${interventionsEnCours} intervention(s) active(s)`}
               </p>
             </CardContent>
           </Card>
@@ -86,9 +141,9 @@ export default async function DashboardPage() {
               <Package className="h-4 w-4 text-gray-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0 €</div>
+              <div className="text-2xl font-bold">{formatPrice(valeurStock)}</div>
               <p className="text-xs text-gray-600 mt-1">
-                Aucun investissement
+                Investissement total
               </p>
             </CardContent>
           </Card>
@@ -101,9 +156,11 @@ export default async function DashboardPage() {
               <TrendingUp className="h-4 w-4 text-gray-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0 €</div>
+              <div className={`text-2xl font-bold ${margeTotale >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {formatPrice(margeTotale)}
+              </div>
               <p className="text-xs text-gray-600 mt-1">
-                Pas de ventes
+                Sur {vehiculesVendus} vente(s)
               </p>
             </CardContent>
           </Card>
@@ -148,7 +205,7 @@ export default async function DashboardPage() {
             votre premier véhicule pour démarrer la gestion de votre concession.
           </p>
         </div>
-      </main>
-    </div>
+
+    </>
   );
 }
