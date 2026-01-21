@@ -16,7 +16,12 @@ if (!connectionString) {
   throw new Error('DATABASE_URL or POSTGRES_PRISMA_URL must be defined');
 }
 
-const pool = globalForPrisma.pool ?? new Pool({ connectionString });
+const pool = globalForPrisma.pool ?? new Pool({ 
+  connectionString,
+  ssl: {
+    rejectUnauthorized: false, // Accepter les certificats auto-signés
+  }
+});
 const adapter = new PrismaPg(pool);
 
 export const prisma =
