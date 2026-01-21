@@ -117,10 +117,13 @@ export async function PUT(
       }
     }
 
-    // Convertir dateAchat si nécessaire
+    // Convertir dateAchat et dateVente si nécessaire
     const dataToUpdate: any = { ...validatedData };
     if (dataToUpdate.dateAchat && typeof dataToUpdate.dateAchat === 'string') {
       dataToUpdate.dateAchat = new Date(dataToUpdate.dateAchat);
+    }
+    if (dataToUpdate.dateVente && typeof dataToUpdate.dateVente === 'string') {
+      dataToUpdate.dateVente = new Date(dataToUpdate.dateVente);
     }
 
     // Mettre à jour le véhicule

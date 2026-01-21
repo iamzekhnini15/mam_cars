@@ -74,6 +74,9 @@ export default async function DashboardPage() {
   const vehiculesVendusData = await prisma.vehicule.findMany({
     where: {
       statut: 'VENDU',
+      prixVenteFinal: {
+        not: null,
+      },
     },
     select: {
       prixVenteFinal: true,
@@ -83,7 +86,8 @@ export default async function DashboardPage() {
   });
 
   const margeTotale = vehiculesVendusData.reduce((acc, v) => {
-    const prixVente = Number(v.prixVenteFinal || 0);
+    if (!v.prixVenteFinal) return acc;
+    const prixVente = Number(v.prixVenteFinal);
     const coutTotal = Number(v.prixAchat) + Number(v.coutReparations || 0);
     return acc + (prixVente - coutTotal);
   }, 0);

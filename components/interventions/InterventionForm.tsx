@@ -16,10 +16,10 @@ import { TypeIntervention, StatutIntervention } from '@prisma/client';
 type InterventionFormProps = {
   intervention?: any;
   vehiculeId?: string;
-  isEdit?: boolean;
 };
 
-export function InterventionForm({ intervention, vehiculeId, isEdit = false }: InterventionFormProps) {
+export function InterventionForm({ intervention, vehiculeId }: InterventionFormProps) {
+  const isEdit = !!intervention;
   const router = useRouter();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);

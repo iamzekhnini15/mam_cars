@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Edit, Trash2, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { DeleteVehiculeButton } from '@/components/vehicules/DeleteVehiculeButton';
+import VendreVehiculeButton from '@/components/vehicules/VendreVehiculeButton';
 import {
     formatPrice,
     formatKilometrage,
@@ -97,6 +98,16 @@ export default async function VehiculeDetailPage({ params }: VehiculeDetailPageP
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    {vehicule.statut !== 'VENDU' && (
+                        <VendreVehiculeButton
+                            vehiculeId={vehicule.id}
+                            prixVenteEstime={Number(vehicule.prixVenteEstime)}
+                            prixAchat={Number(vehicule.prixAchat)}
+                            coutReparations={Number(vehicule.coutReparations)}
+                            marque={vehicule.marque}
+                            modele={vehicule.modele}
+                        />
+                    )}
                     <Link href={`/dashboard/vehicules/${vehicule.id}/edit`}>
                         <Button variant="outline">
                             <Edit className="h-4 w-4 mr-2" />

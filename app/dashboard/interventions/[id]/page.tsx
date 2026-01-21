@@ -5,8 +5,9 @@ import { prisma } from '@/lib/prisma';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
+import { ArrowLeft, Edit } from 'lucide-react';
 import Link from 'next/link';
+import DeleteInterventionButton from '@/components/interventions/DeleteInterventionButton';
 import {
     formatPrice,
     formatDate,
@@ -80,15 +81,16 @@ export default async function InterventionDetailPage({ params }: InterventionDet
                             Modifier
                         </Button>
                     </Link>
-                    <Button variant="destructive">
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Supprimer
-                    </Button>
+                    <DeleteInterventionButton
+                        interventionId={intervention.id}
+                        vehiculeId={intervention.vehiculeId}
+                        interventionType={typeInterventionLabels[intervention.type]}
+                    />
                 </div>
             </div>
 
             {/* Statut */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-8">
                 <Badge
                     variant={
                         intervention.statut === 'TERMINE'
@@ -105,7 +107,7 @@ export default async function InterventionDetailPage({ params }: InterventionDet
                 )}
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-2 mb-8">
                 {/* Informations générales */}
                 <Card>
                     <CardHeader>
@@ -143,6 +145,7 @@ export default async function InterventionDetailPage({ params }: InterventionDet
                     </CardContent>
                 </Card>
 
+
                 {/* Véhicule concerné */}
                 <Card>
                     <CardHeader>
@@ -176,16 +179,17 @@ export default async function InterventionDetailPage({ params }: InterventionDet
                 </Card>
             </div>
 
-            {/* Description */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Description</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-sm whitespace-pre-wrap">{intervention.description}</p>
-                </CardContent>
-            </Card>
-
+            <div className="grid gap-6  mb-8">
+                {/* Description */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Description</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-sm whitespace-pre-wrap">{intervention.description}</p>
+                    </CardContent>
+                </Card>
+            </div>
             {/* Coût et planning */}
             <Card>
                 <CardHeader>
