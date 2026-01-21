@@ -1,5 +1,26 @@
 import { z } from 'zod';
-import { Carburant, Transmission, StatutVehicule } from '@prisma/client';
+
+// Enums définis localement pour éviter les imports Prisma côté client
+export enum Carburant {
+  ESSENCE = 'ESSENCE',
+  DIESEL = 'DIESEL',
+  HYBRIDE = 'HYBRIDE',
+  ELECTRIQUE = 'ELECTRIQUE',
+  GPL = 'GPL',
+}
+
+export enum Transmission {
+  MANUELLE = 'MANUELLE',
+  AUTOMATIQUE = 'AUTOMATIQUE',
+  SEMI_AUTO = 'SEMI_AUTO',
+}
+
+export enum StatutVehicule {
+  DISPONIBLE = 'DISPONIBLE',
+  EN_PREPARATION = 'EN_PREPARATION',
+  RESERVE = 'RESERVE',
+  VENDU = 'VENDU',
+}
 
 // Schéma de validation pour la création/modification d'un véhicule
 export const vehiculeSchema = z.object({

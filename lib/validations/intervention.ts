@@ -1,5 +1,21 @@
 import { z } from 'zod';
-import { TypeIntervention, StatutIntervention } from '@prisma/client';
+
+// Enums définis localement pour éviter les imports Prisma côté client
+export enum TypeIntervention {
+  REVISION = 'REVISION',
+  REPARATION = 'REPARATION',
+  CONTROLE_TECHNIQUE = 'CONTROLE_TECHNIQUE',
+  CARROSSERIE = 'CARROSSERIE',
+  ESTHETIQUE = 'ESTHETIQUE',
+  AUTRE = 'AUTRE',
+}
+
+export enum StatutIntervention {
+  EN_ATTENTE = 'EN_ATTENTE',
+  EN_COURS = 'EN_COURS',
+  TERMINEE = 'TERMINEE',
+  ANNULEE = 'ANNULEE',
+}
 
 // Schéma de validation pour la création/modification d'une intervention
 export const interventionSchema = z.object({

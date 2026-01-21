@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { interventionSchema } from '@/lib/validations/intervention';
+import { TypeIntervention, StatutIntervention } from '@prisma/client';
 import { z } from 'zod';
 
 // GET - Récupérer toutes les interventions avec filtres
@@ -102,6 +103,12 @@ export async function POST(request: Request) {
     }
     if (dataToCreate.dateRealisation && typeof dataToCreate.dateRealisation === 'string') {
       dataToCreate.dateRealisation = new Date(dataToCreate.dateRealisation);
+    }
+    
+    // Cast des enums vers les types Prisma
+    dataToCreate.type = dataToCreate.type as TypeIntervention;
+    if (dataToCreate.statut) {
+      dataToCreate.statut = dataToCreate.statut as StatutIntervention;
     }
 
     // Créer l'intervention

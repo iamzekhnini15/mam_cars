@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { vehiculeSchema } from '@/lib/validations/vehicule';
+import { Carburant, Transmission, StatutVehicule } from '@prisma/client';
 
 // GET - Récupérer tous les véhicules
 export async function GET(request: Request) {
@@ -103,6 +104,9 @@ export async function POST(request: Request) {
       data: {
         ...validatedData,
         dateAchat,
+        carburant: validatedData.carburant as Carburant,
+        transmission: validatedData.transmission as Transmission,
+        statut: validatedData.statut as StatutVehicule | undefined,
         createdBy: session.user.id,
       },
       include: {

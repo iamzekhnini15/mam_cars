@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { interventionSchema } from '@/lib/validations/intervention';
+import { TypeIntervention, StatutIntervention } from '@prisma/client';
 import { z } from 'zod';
 
 // GET - Récupérer une intervention par ID
@@ -100,6 +101,14 @@ export async function PUT(
     }
     if (dataToUpdate.dateRealisation && typeof dataToUpdate.dateRealisation === 'string') {
       dataToUpdate.dateRealisation = new Date(dataToUpdate.dateRealisation);
+    }
+    
+    // Cast des enums vers les types Prisma
+    if (dataToUpdate.type) {
+      dataToUpdate.type = dataToUpdate.type as TypeIntervention;
+    }
+    if (dataToUpdate.statut) {
+      dataToUpdate.statut = dataToUpdate.statut as StatutIntervention;
     }
 
     // Gérer la mise à jour du coût de réparations du véhicule

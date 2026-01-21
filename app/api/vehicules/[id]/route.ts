@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { vehiculeSchema } from '@/lib/validations/vehicule';
+import { Carburant, Transmission, StatutVehicule } from '@prisma/client';
 
 // GET - Récupérer un véhicule par ID
 export async function GET(
@@ -124,6 +125,17 @@ export async function PUT(
     }
     if (dataToUpdate.dateVente && typeof dataToUpdate.dateVente === 'string') {
       dataToUpdate.dateVente = new Date(dataToUpdate.dateVente);
+    }
+    
+    // Cast des enums vers les types Prisma
+    if (dataToUpdate.carburant) {
+      dataToUpdate.carburant = dataToUpdate.carburant as Carburant;
+    }
+    if (dataToUpdate.transmission) {
+      dataToUpdate.transmission = dataToUpdate.transmission as Transmission;
+    }
+    if (dataToUpdate.statut) {
+      dataToUpdate.statut = dataToUpdate.statut as StatutVehicule;
     }
 
     // Mettre à jour le véhicule
