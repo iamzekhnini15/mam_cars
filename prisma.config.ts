@@ -9,6 +9,7 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DIRECT_URL"], // Utiliser DIRECT_URL pour tout (migrations + runtime)
+    // Support des variables Supabase et standard
+    url: process.env["DIRECT_DATABASE_URL"] || process.env["POSTGRES_URL_NON_POOLING"] || process.env["DIRECT_URL"],
   },
 });
