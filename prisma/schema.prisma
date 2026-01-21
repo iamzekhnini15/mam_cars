@@ -1,0 +1,218 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum StatutVehicule {
+  EN_STOCK
+  EN_REPARATION
+  PRET_A_VENDRE
+  VENDU
+  RESERVE
+}
+
+enum TypeIntervention {
+  MECANIQUE
+  CARROSSERIE
+  CONTROLE_TECHNIQUE
+  NETTOYAGE
+  VITRERIE
+  PNEUMATIQUES
+  ELECTRICITE
+  REVISION
+  AUTRE
+}
+
+enum StatutIntervention {
+  A_FAIRE
+  EN_COURS
+  TERMINE
+  ANNULE
+}
+
+enum Carburant {
+  ESSENCE
+  DIESEL
+  HYBRIDE
+  ELECTRIQUE
+  GPL
+}
+
+enum Transmission {
+  MANUELLE
+  AUTOMATIQUE
+  SEMI_AUTO
+}
+
+enum TypePhoto {
+  PRINCIPALE
+  INTERIEUR
+  EXTERIEUR
+  DEFAUT
+  DOCUMENT
+}
+
+// ==================== MODELS ====================
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  nom          String
+  prenom       String
+  role         Role     @default(USER)
+  actif        Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  vehiculesCreated     Vehicule[]     @relation("VehiculeCreator")
+  interventionsCreated Intervention[] @relation("InterventionCreator")
+  historique           Historique[]
+
+  @@map("users")
+}
+
+model Vehicule {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Informations principales
+  vin              String  @unique
+  marque           String
+  modele           String
+  version          String?
+  annee            Int
+  kilometrage      Int
+  couleur          String
+  carburant        Carburant
+  transmission     Transmission
+  puissance        Int? // en chevaux
+  nombrePortes     Int?
+  nombrePlaces     Int?
+
+  // Prix et coûts
+  prixAchat        Decimal  @db.Decimal(10, 2)
+  prixVenteEstime  Decimal? @db.Decimal(10, 2)
+  prixVenteFinal   Decimal? @db.Decimal(10, 2)
+  coutReparations  Decimal  @default(0) @db.Decimal(10, 2)
+
+  // Dates importantes
+  dateAchat        DateTime
+  dateVente        DateTime?
+  dateMiseEnLigne  DateTime?
+
+  // Statut et infos complémentaires
+  statut               StatutVehicule @default(EN_STOCK)
+  emplacement          String? // Emplacement physique dans le garage
+  notes                String?        @db.Text
+  optionsEquipements   String?        @db.Text // JSON ou texte libre
+  defautsConnus        String?        @db.Text
+
+  // Relations
+  createdBy String
+  creator   User   @relation("VehiculeCreator", fields: [createdBy], references: [id])
+
+  interventions Intervention[]
+  photos        Photo[]
+  historique    Historique[]
+
+  @@index([statut])
+  @@index([marque])
+  @@index([createdBy])
+  @@map("vehicules")
+}
+
+model Intervention {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Lien avec le véhicule
+  vehiculeId String
+  vehicule   Vehicule @relation(fields: [vehiculeId], references: [id], onDelete: Cascade)
+
+  // Informations de l'intervention
+  type        TypeIntervention
+  description String           @db.Text
+  statut      StatutIntervention @default(A_FAIRE)
+  priorite    Int              @default(1) // 1=Basse, 2=Moyenne, 3=Haute
+
+  // Coûts et prestataire
+  cout        Decimal @default(0) @db.Decimal(10, 2)
+  prestataire String?
+
+  // Dates
+  datePrevue       DateTime?
+  dateDebut        DateTime?
+  dateRealisation  DateTime?
+
+  // Informations complémentaires
+  notes          String?  @db.Text
+  piecesFournies String?  @db.Text // Liste des pièces
+  garantie       String? // Info sur la garantie
+
+  // Créateur
+  createdBy String
+  creator   User   @relation("InterventionCreator", fields: [createdBy], references: [id])
+
+  @@index([vehiculeId])
+  @@index([statut])
+  @@index([createdBy])
+  @@map("interventions")
+}
+
+model Photo {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  // Lien avec le véhicule
+  vehiculeId String
+  vehicule   Vehicule @relation(fields: [vehiculeId], references: [id], onDelete: Cascade)
+
+  // Informations de la photo
+  url          String
+  cloudinaryId String? // ID Cloudinary ou Vercel Blob
+  type         TypePhoto @default(EXTERIEUR)
+  ordre        Int       @default(0) // Pour trier les photos
+
+  uploadedAt DateTime @default(now())
+
+  @@index([vehiculeId])
+  @@map("photos")
+}
+
+model Historique {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  // Relations
+  vehiculeId String
+  vehicule   Vehicule @relation(fields: [vehiculeId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  // Détails de l'action
+  action  String // Ex: "Création", "Modification", "Changement de statut"
+  details String @db.Text // JSON avec les détails de la modification
+
+  @@index([vehiculeId])
+  @@index([userId])
+  @@map("historique")
+}
