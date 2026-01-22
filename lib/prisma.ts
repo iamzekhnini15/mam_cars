@@ -16,11 +16,17 @@ if (!connectionString) {
   throw new Error('DATABASE_URL or POSTGRES_PRISMA_URL must be defined');
 }
 
-// Configuration du pool avec SSL sécurisé
+// Configuration du pool avec SSL strict (certificat Supabase)
+const sslRootCert = process.env.PGSSLROOTCERT?.replace(/\\n/g, '\n');
+
 const pool = globalForPrisma.pool ?? new Pool({
   connectionString,
-  // Laisser pg gérer SSL automatiquement selon l'URL (sslmode=require)
-  // Les certificats Supabase sont signés par des CA reconnues
+  ssl: sslRootCert
+    ? {
+        ca: sslRootCert,
+        rejectUnauthorized: true,
+      }
+    : undefined,
 });
 const adapter = new PrismaPg(pool);
 
