@@ -17,7 +17,10 @@ if (!connectionString) {
 }
 
 // Configuration du pool avec SSL strict (certificat Supabase)
-const sslRootCert = process.env.PGSSLROOTCERT?.replace(/\\n/g, '\n');
+const sslRootCertBase64 = process.env.PGSSLROOTCERT_BASE64;
+const sslRootCert = sslRootCertBase64
+  ? Buffer.from(sslRootCertBase64, 'base64').toString('utf8')
+  : process.env.PGSSLROOTCERT?.replace(/\\n/g, '\n');
 
 const pool = globalForPrisma.pool ?? new Pool({
   connectionString,
