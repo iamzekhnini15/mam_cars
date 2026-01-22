@@ -16,41 +16,55 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
+          console.error('[AUTH] Email ou mot de passe manquant');
           throw new Error('Email et mot de passe requis');
         }
 
-        // Chercher l'utilisateur
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
+        try {
+          // Chercher l'utilisateur
+          console.log('[AUTH] Recherche utilisateur:', credentials.email);
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+          });
 
-        if (!user) {
-          throw new Error('Identifiants invalides');
+          if (!user) {
+            console.error('[AUTH] Utilisateur non trouvé:', credentials.email);
+            throw new Error('Identifiants invalides');
+          }
+
+          console.log('[AUTH] Utilisateur trouvé:', user.email);
+
+          // Vérifier si l'utilisateur est actif
+          if (!user.actif) {
+            console.error('[AUTH] Compte désactivé:', user.email);
+            throw new Error('Compte désactivé');
+          }
+
+          // Vérifier le mot de passe
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password,
+            user.passwordHash
+          );
+
+          if (!isPasswordValid) {
+            console.error('[AUTH] Mot de passe invalide pour:', user.email);
+            throw new Error('Identifiants invalides');
+          }
+
+          console.log('[AUTH] Authentification réussie pour:', user.email);
+
+          // Retourner l'utilisateur (sans le mot de passe)
+          return {
+            id: user.id,
+            email: user.email,
+            nom: user.nom,
+            prenom: user.prenom,
+            role: user.role,
+          };
+        } catch (error) {
+          console.error('[AUTH] Erreur lors de l\'authentification:', error);
+          throw error;
         }
-
-        // Vérifier si l'utilisateur est actif
-        if (!user.actif) {
-          throw new Error('Compte désactivé');
-        }
-
-        // Vérifier le mot de passe
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.passwordHash
-        );
-
-        if (!isPasswordValid) {
-          throw new Error('Identifiants invalides');
-        }
-
-        // Retourner l'utilisateur (sans le mot de passe)
-        return {
-          id: user.id,
-          email: user.email,
-          nom: user.nom,
-          prenom: user.prenom,
-          role: user.role,
-        };
       },
     }),
   ],
