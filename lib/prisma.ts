@@ -1,17 +1,39 @@
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 
-declare global {
-  var prisma: PrismaClient | undefined;
+// Singleton Prisma Client pour éviter les connexions multiples en développement
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+  pool: Pool | undefined;
+};
+
+// Utiliser le pooling Supabase pour les requêtes
+// Support des variables d'environnement Supabase et standard
+const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_PRISMA_URL;
+
+if (!connectionString) {
+  throw new Error('DATABASE_URL or POSTGRES_PRISMA_URL must be defined');
 }
 
+// Configuration du pool avec SSL sécurisé
+const pool = globalForPrisma.pool ?? new Pool({
+  connectionString,
+  // Laisser pg gérer SSL automatiquement selon l'URL (sslmode=require)
+  // Les certificats Supabase sont signés par des CA reconnues
+});
+const adapter = new PrismaPg(pool);
+
 export const prisma =
-  global.prisma ??
+  globalForPrisma.prisma ??
   new PrismaClient({
-    datasourceUrl: process.env.DATABASE_URL,
+    adapter,
+    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 
 if (process.env.NODE_ENV !== 'production') {
-  global.prisma = prisma;
+  globalForPrisma.prisma = prisma;
+  globalForPrisma.pool = pool;
 }
 
 export default prisma;
